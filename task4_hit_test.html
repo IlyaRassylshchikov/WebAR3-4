@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <title>Задание 4: WebXR Hit-Test AR Scene (Three.js)</title>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+    }
+  }
+  </script>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #111422;
+      overflow: hidden;
+      color: #fff;
+    }
+    #launch {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 18px 40px;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      background: linear-gradient(135deg, #0984e3, #6c5ce7);
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(108, 92, 231, 0.4);
+      z-index: 100;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    #launch:active {
+      transform: translate(-50%, -50%) scale(0.96);
+      opacity: 0.85;
+    }
+    #info-panel {
+      display: none;
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 22px;
+      border-radius: 20px;
+      background: rgba(15, 18, 30, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      font-size: 14px;
+      z-index: 100;
+      text-align: center;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+    #hint {
+      display: none;
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 24px;
+      border-radius: 25px;
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      font-size: 14px;
+      z-index: 100;
+      text-align: center;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <button id="launch">Войти в AR-пространство</button>
+  <div id="info-panel">Объектов размещено: <span id="count">0</span></div>
+  <div id="hint">Наведите камеру на горизонтальную поверхность и нажмите на экран</div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    let hitSource = null;
+    let hitSourceRequested = false;
+    let placedCount = 0;
+
+    const btnLaunch = document.getElementById('launch');
+    const infoPanel = document.getElementById('info-panel');
+    const hintBar = document.getElementById('hint');
+    const countDisplay = document.getElementById('count');
+
+    // 1. Создание Three.js сцены и камеры
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+
+    // 2. Рендерер с поддержкой WebXR
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.xr.enabled = true;
+    document.body.appendChild(renderer.domElement);
+
+    // 3. Освещение
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 2.5);
+    scene.add(hemiLight);
+
+    const dirLight = new THREE.DirectionalLight(0xfff5e6, 1.8);
+    dirLight.position.set(2, 6, 3);
+    scene.add(dirLight);
+
+    // 4. Визуальный маркер (ретикл / прицел hit-test)
+    const markerGeometry = new THREE.RingGeometry(0.08, 0.11, 32).rotateX(-Math.PI / 2);
+    const markerMaterial = new THREE.MeshBasicMaterial({ 
+      color: 0x00cec9, 
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.9
+    });
+    const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+    marker.matrixAutoUpdate = false;
+    marker.visible = false;
+    scene.add(marker);
+
+    // 5. Функция создания интерактивного 3D-объекта (голографический кристалл-куб)
+    function createPlacedObject() {
+      const group = new THREE.Group();
+
+      // Основание
+      const baseGeom = new THREE.CylinderGeometry(0.12, 0.14, 0.04, 24);
+      const baseMat = new THREE.MeshStandardMaterial({ color: 0x2d3436, metalness: 0.8, roughness: 0.2 });
+      const base = new THREE.Mesh(baseGeom, baseMat);
+      base.position.y = 0.02;
+      group.add(base);
+
+      // Внутренний кристалл / куб
+      const cubeGeom = new THREE.BoxGeometry(0.14, 0.14, 0.14);
+      const cubeMat = new THREE.MeshStandardMaterial({
+        color: 0x6c5ce7,
+        roughness: 0.2,
+        metalness: 0.5,
+        emissive: 0x221155,
+        emissiveIntensity: 0.4
+      });
+      const cube = new THREE.Mesh(cubeGeom, cubeMat);
+      cube.position.y = 0.15;
+      cube.rotation.y = Math.PI / 4;
+      group.add(cube);
+
+      return group;
+    }
+
+    // 6. Запуск AR-сессии по клику
+    btnLaunch.addEventListener('click', async () => {
+      if (!navigator.xr) {
+        alert('WebXR не поддерживается в вашем браузере. Используйте Google Chrome на Android.');
+        return;
+      }
+
+      const supported = await navigator.xr.isSessionSupported('immersive-ar');
+      if (!supported) {
+        alert('Режим immersive-ar не поддерживается устройством.');
+        return;
+      }
+
+      const session = await navigator.xr.requestSession('immersive-ar', {
+        requiredFeatures: ['hit-test', 'local-floor']
+      });
+
+      renderer.xr.setReferenceSpaceType('local-floor');
+      await renderer.xr.setSession(session);
+
+      btnLaunch.style.display = 'none';
+      infoPanel.style.display = 'block';
+      hintBar.style.display = 'block';
+
+      // Обработка тапа по экрану (select)
+      session.addEventListener('select', () => {
+        if (!marker.visible) return;
+
+        const newObj = createPlacedObject();
+        newObj.position.setFromMatrixPosition(marker.matrix);
+        newObj.quaternion.setFromRotationMatrix(marker.matrix);
+        scene.add(newObj);
+
+        placedCount++;
+        countDisplay.textContent = placedCount;
+        hintBar.textContent = 'Объект зафиксирован в пространстве! Нажмите еще раз для установки следующего.';
+      });
+
+      // Завершение сессии
+      session.addEventListener('end', () => {
+        hitSource = null;
+        hitSourceRequested = false;
+        marker.visible = false;
+        btnLaunch.style.display = 'block';
+        infoPanel.style.display = 'none';
+        hintBar.style.display = 'none';
+        hintBar.textContent = 'Наведите камеру на горизонтальную поверхность и нажмите на экран';
+      });
+    });
+
+    // 7. Основной цикл рендеринга WebXR
+    renderer.setAnimationLoop((timestamp, frame) => {
+      if (frame) {
+        const session = renderer.xr.getSession();
+
+        // Запрос источника hit-test один раз при старте
+        if (!hitSourceRequested) {
+          session.requestReferenceSpace('viewer').then((viewerSpace) => {
+            session.requestHitTestSource({ space: viewerSpace }).then((source) => {
+              hitSource = source;
+            });
+          });
+          session.addEventListener('end', () => {
+            hitSourceRequested = false;
+            hitSource = null;
+          });
+          hitSourceRequested = true;
+        }
+
+        // Получение результатов hit-test от текущего кадра
+        if (hitSource) {
+          const hitTestResults = frame.getHitTestResults(hitSource);
+          if (hitTestResults.length > 0) {
+            const hit = hitTestResults[0];
+            const referenceSpace = renderer.xr.getReferenceSpace();
+            const pose = hit.getPose(referenceSpace);
+
+            marker.visible = true;
+            marker.matrix.fromArray(pose.transform.matrix);
+          } else {
+            marker.visible = false;
+          }
+        }
+      }
+
+      renderer.render(scene, camera);
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
