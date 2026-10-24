@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Задание 3: MindAR Face Tracking</title>
+  <title>Задание 3: MindAR Face Tracking AR Mask</title>
   <style>
     body {
       margin: 0;
@@ -13,20 +13,21 @@
     }
     #ui-container {
       position: absolute;
-      top: 16px;
+      top: 20px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 1000;
       display: flex;
-      gap: 8px;
-      background: rgba(15, 18, 30, 0.9);
-      padding: 6px 12px;
+      gap: 10px;
+      background: rgba(18, 18, 28, 0.85);
+      padding: 8px 16px;
       border-radius: 30px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
     .effect-btn {
-      padding: 10px 18px;
+      padding: 10px 20px;
       font-size: 14px;
       font-weight: 600;
       border: none;
@@ -36,32 +37,21 @@
       cursor: pointer;
       transition: all 0.2s ease;
     }
+    .effect-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
     .effect-btn.active {
       background: linear-gradient(135deg, #0984e3, #6c5ce7);
       box-shadow: 0 2px 10px rgba(108, 92, 231, 0.6);
     }
-    #debug-log {
-      position: absolute;
-      bottom: 12px;
-      left: 12px;
-      z-index: 1000;
-      color: #00ffcc;
-      font-family: monospace;
-      font-size: 12px;
-      background: rgba(0, 0, 0, 0.75);
-      padding: 8px 12px;
-      border-radius: 8px;
-      max-width: 85%;
-      pointer-events: none;
-    }
     #nav-link {
       position: absolute;
-      bottom: 16px;
-      right: 16px;
+      bottom: 20px;
+      right: 20px;
       z-index: 1000;
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0,0,0,0.8);
       color: #00cec9;
-      padding: 8px 14px;
+      padding: 8px 16px;
       border-radius: 12px;
       text-decoration: none;
       font-size: 13px;
@@ -76,12 +66,11 @@
 <body>
   <div id="ui-container">
     <button class="effect-btn active" id="btn-glasses">🕶 Очки</button>
-    <button class="effect-btn" id="btn-mask">🎭 Маска</button>
-    <button class="effect-btn" id="btn-none">✖ Выкл</button>
+    <button class="effect-btn" id="btn-mask">🎭 Неоновая маска</button>
+    <button class="effect-btn" id="btn-none">✖ Без эффекта</button>
   </div>
 
-  <div id="debug-log">Инициализация AR камеры...</div>
-  <a href="task4.html" id="nav-link">К Заданию 4 ➔</a>
+  <a href="task4.html" id="nav-link">Перейти к Заданию 4 (Hit-Test) ➔</a>
 
   <a-scene
     mindar-face="filterMinCF: 0.0001; filterBeta: 1"
@@ -91,29 +80,38 @@
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false">
     
-    <a-assets timeout="10000">
-      <!-- Проверенная CDN-модель очков из репозитория MindAR -->
-      <a-asset-item id="glassesModel" src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/face-tracking/assets/glasses/scene.gltf"></a-asset-item>
-    </a-assets>
-
     <a-camera position="0 0 0" look-controls-enabled="false"></a-camera>
     
-    <a-light type="ambient" intensity="1.5"></a-light>
-    <a-light type="directional" intensity="2.0" position="0 1 2"></a-light>
+    <a-light type="ambient" intensity="1.2"></a-light>
+    <a-light type="directional" intensity="1.5" position="0 1 2"></a-light>
 
-    <!-- 1. ТАРГЕТ ОЧКОВ: точка 168 (переносица) -->
+    <!-- 1. ОЧКИ (якорь 168 - переносица между глаз) -->
     <a-entity mindar-face-target="anchorIndex: 168" id="glassesTarget">
-      <!-- Сама 3D модель очков -->
-      <a-gltf-model
-        id="glassesEntity"
-        src="#glassesModel"
-        position="0 0 -0.05"
-        scale="0.065 0.065 0.065"
-        rotation="0 0 0">
-      </a-gltf-model>
+      <a-entity id="glassesEntity" visible="true" position="0 0 0.05">
+        <!-- Левая темная линза -->
+        <a-box position="-0.36 0 0.02" width="0.48" height="0.32" depth="0.02" color="#0a0a0f" material="roughness: 0.1; metalness: 0.9; opacity: 0.95; transparent: true"></a-box>
+        <!-- Левая золотая оправа -->
+        <a-torus position="-0.36 0 0.03" radius="0.22" radius-tubular="0.018" color="#f1c40f" material="metalness: 0.9; roughness: 0.2"></a-torus>
+
+        <!-- Правая темная линза -->
+        <a-box position="0.36 0 0.02" width="0.48" height="0.32" depth="0.02" color="#0a0a0f" material="roughness: 0.1; metalness: 0.9; opacity: 0.95; transparent: true"></a-box>
+        <!-- Правая золотая оправа -->
+        <a-torus position="0.36 0 0.03" radius="0.22" radius-tubular="0.018" color="#f1c40f" material="metalness: 0.9; roughness: 0.2"></a-torus>
+
+        <!-- Золотая перемычка на переносице -->
+        <a-box position="0 0.05 0.03" width="0.28" height="0.04" depth="0.03" color="#f1c40f" material="metalness: 0.9; roughness: 0.2"></a-box>
+        
+        <!-- Верхняя стильная планка (Browline) -->
+        <a-box position="0 0.16 0.03" width="1.1" height="0.045" depth="0.03" color="#f1c40f" material="metalness: 0.9; roughness: 0.2"></a-box>
+
+        <!-- Левая дужка назад к уху -->
+        <a-box position="-0.65 0.08 -0.3" rotation="0 15 0" width="0.03" height="0.03" depth="0.65" color="#f1c40f" material="metalness: 0.9; roughness: 0.2"></a-box>
+        <!-- Правая дужка назад к уху -->
+        <a-box position="0.65 0.08 -0.3" rotation="0 -15 0" width="0.03" height="0.03" depth="0.65" color="#f1c40f" material="metalness: 0.9; roughness: 0.2"></a-box>
+      </a-entity>
     </a-entity>
 
-    <!-- 2. ТАРГЕТ НЕОНОВОЙ МАСКИ: точка 1 (нос) -->
+    <!-- 2. НЕОНОВАЯ МАСКА (якорь 1 - кончик носа) -->
     <a-entity mindar-face-target="anchorIndex: 1" id="maskTarget">
       <a-entity id="maskEntity" visible="false">
         <a-cone position="0 -0.15 0.15" rotation="180 0 0" radius-bottom="0.45" radius-top="0.1" height="0.6" color="#00cec9" material="wireframe: true; wireframeLinewidth: 2; emissive: #00cec9; emissiveIntensity: 0.9"></a-cone>
@@ -125,71 +123,25 @@
   </a-scene>
 
   <script>
-    const logEl = document.getElementById('debug-log');
-    function log(msg) {
-      console.log(msg);
-      logEl.textContent = msg;
-    }
-
     const btnGlasses = document.getElementById('btn-glasses');
     const btnMask = document.getElementById('btn-mask');
     const btnNone = document.getElementById('btn-none');
 
     const glassesEntity = document.getElementById('glassesEntity');
     const maskEntity = document.getElementById('maskEntity');
-    const sceneEl = document.querySelector('a-scene');
 
-    let currentEffect = 'glasses';
+    function showEffect(name) {
+      btnGlasses.classList.toggle('active', name === 'glasses');
+      btnMask.classList.toggle('active', name === 'mask');
+      btnNone.classList.toggle('active', name === 'none');
 
-    function setEffect(effect) {
-      currentEffect = effect;
-      
-      btnGlasses.classList.toggle('active', effect === 'glasses');
-      btnMask.classList.toggle('active', effect === 'mask');
-      btnNone.classList.toggle('active', effect === 'none');
-
-      // Переключаем видимость через A-Frame и Three.js напрямую
-      if (glassesEntity.object3D) {
-        glassesEntity.object3D.visible = (effect === 'glasses');
-      }
-      glassesEntity.setAttribute('visible', effect === 'glasses');
-
-      if (maskEntity.object3D) {
-        maskEntity.object3D.visible = (effect === 'mask');
-      }
-      maskEntity.setAttribute('visible', effect === 'mask');
-
-      log(`Выбран эффект: ${effect === 'glasses' ? 'Очки' : effect === 'mask' ? 'Маска' : 'Выкл'}`);
+      glassesEntity.setAttribute('visible', name === 'glasses');
+      maskEntity.setAttribute('visible', name === 'mask');
     }
 
-    btnGlasses.addEventListener('click', () => setEffect('glasses'));
-    btnMask.addEventListener('click', () => setEffect('mask'));
-    btnNone.addEventListener('click', () => setEffect('none'));
-
-    // Отслеживание загрузки модели очков
-    glassesEntity.addEventListener('model-loaded', () => {
-      log('3D-модель очков успешно загружена в память!');
-      setEffect('glasses');
-    });
-
-    glassesEntity.addEventListener('model-error', (e) => {
-      log('Ошибка загрузки модели очков! Пробуем резервную...');
-      // Резервная загрузка локального файла
-      glassesEntity.setAttribute('src', './glasses.glb');
-    });
-
-    // Отслеживание событий трекинга
-    const glassesTarget = document.getElementById('glassesTarget');
-    glassesTarget.addEventListener('targetFound', () => {
-      log('Лицо обнаружено! Трекинг активен.');
-    });
-    glassesTarget.addEventListener('targetLost', () => {
-      log('Лицо потеряно. Направьте камеру на лицо.');
-    });
-
-    sceneEl.addEventListener('renderstart', () => {
-      log('AR-сцена запущена. Ожидание камеры...');
-    });
+    btnGlasses.addEventListener('click', () => showEffect('glasses'));
+    btnMask.addEventListener('click', () => showEffect('mask'));
+    btnNone.addEventListener('click', () => showEffect('none'));
   </script>
 </body>
 </html>
