@@ -3,74 +3,54 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Задание 3: MindAR Face Tracking AR Mask</title>
+  <title>Задание 3: MindAR Face Tracking</title>
   <style>
     body {
       margin: 0;
       overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: Arial, sans-serif;
       background: #000;
     }
-    #ui-container {
+    #effect-selector {
       position: absolute;
       top: 20px;
       left: 50%;
       transform: translateX(-50%);
-      z-index: 1000;
-      display: flex;
-      gap: 10px;
-      background: rgba(18, 18, 28, 0.85);
-      padding: 8px 16px;
-      border-radius: 30px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-    .effect-btn {
-      padding: 10px 20px;
-      font-size: 14px;
-      font-weight: 600;
-      border: none;
-      border-radius: 20px;
-      background: rgba(255, 255, 255, 0.15);
-      color: #fff;
+      z-index: 999;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      border: 2px solid #0984e3;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
       cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .effect-btn:hover {
-      background: rgba(255, 255, 255, 0.3);
-    }
-    .effect-btn.active {
-      background: linear-gradient(135deg, #0984e3, #6c5ce7);
-      box-shadow: 0 2px 10px rgba(108, 92, 231, 0.6);
     }
     #nav-link {
       position: absolute;
       bottom: 20px;
       right: 20px;
-      z-index: 1000;
-      background: rgba(0,0,0,0.8);
+      z-index: 999;
+      background: rgba(0, 0, 0, 0.8);
       color: #00cec9;
-      padding: 8px 16px;
-      border-radius: 12px;
+      padding: 10px 16px;
+      border-radius: 8px;
       text-decoration: none;
-      font-size: 13px;
-      border: 1px solid #00cec9;
+      font-size: 14px;
     }
   </style>
 
-  <!-- Скрипты A-Frame и MindAR Face -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-face-aframe.prod.js"></script>
 </head>
 <body>
-  <div id="ui-container">
-    <button class="effect-btn active" id="btn-glasses">🕶 Очки</button>
-    <button class="effect-btn" id="btn-mask">🎭 Неоновая маска</button>
-    <button class="effect-btn" id="btn-none">✖ Без эффекта</button>
-  </div>
+  <select id="effect-selector">
+    <option value="glasses">🕶 Очки 3D</option>
+    <option value="mask">🎭 Маска</option>
+    <option value="none">— Без эффекта —</option>
+  </select>
 
-  <a href="task4.html" id="nav-link">Перейти к Заданию 4 (Hit-Test) ➔</a>
+  <a href="task4.html" id="nav-link">К Заданию 4 ➔</a>
 
   <a-scene
     mindar-face="filterMinCF: 0.0001; filterBeta: 1"
@@ -80,68 +60,55 @@
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false">
     
+    <a-assets>
+      <a-asset-item id="glassesModel" src="glasses.glb"></a-asset-item>
+    </a-assets>
+
     <a-camera position="0 0 0" look-controls-enabled="false"></a-camera>
     
     <a-light type="ambient" intensity="1.2"></a-light>
-    <a-light type="directional" intensity="1.5" position="0 1 2"></a-light>
+    <a-light type="directional" intensity="1.5" position="0 1 1"></a-light>
 
-    <!-- 1. ОЧКИ (якорь 168 - переносица между глаз) -->
-    <a-entity mindar-face-target="anchorIndex: 168" id="glassesTarget">
-      <a-entity id="glassesEntity" visible="true" position="0 0 0.05">
-        <!-- Левая темная линза -->
-        <a-box position="-0.36 0 0.02" width="0.48" height="0.32" depth="0.02" color="#0a0a0f" material="roughness: 0.1; metalness: 0.9; opacity: 0.95; transparent: true"></a-box>
-        <!-- Левая золотая оправа -->
-        <a-torus position="-0.36 0 0.03" radius="0.22" radius-tubular="0.018" color="#f1c40f" material="metalness: 0.9; roughness: 0.2"></a-torus>
-
-        <!-- Правая темная линза -->
-        <a-box position="0.36 0 0.02" width="0.48" height="0.32" depth="0.02" color="#0a0a0f" material="roughness: 0.1; metalness: 0.9; opacity: 0.95; transparent: true"></a-box>
-        <!-- Правая золотая оправа -->
-        <a-torus position="0.36 0 0.03" radius="0.22" radius-tubular="0.018" color="#f1c40f" material="metalness: 0.9; roughness: 0.2"></a-torus>
-
-        <!-- Золотая перемычка на переносице -->
-        <a-box position="0 0.05 0.03" width="0.28" height="0.04" depth="0.03" color="#f1c40f" material="metalness: 0.9; roughness: 0.2"></a-box>
-        
-        <!-- Верхняя стильная планка (Browline) -->
-        <a-box position="0 0.16 0.03" width="1.1" height="0.045" depth="0.03" color="#f1c40f" material="metalness: 0.9; roughness: 0.2"></a-box>
-
-        <!-- Левая дужка назад к уху -->
-        <a-box position="-0.65 0.08 -0.3" rotation="0 15 0" width="0.03" height="0.03" depth="0.65" color="#f1c40f" material="metalness: 0.9; roughness: 0.2"></a-box>
-        <!-- Правая дужка назад к уху -->
-        <a-box position="0.65 0.08 -0.3" rotation="0 -15 0" width="0.03" height="0.03" depth="0.65" color="#f1c40f" material="metalness: 0.9; roughness: 0.2"></a-box>
-      </a-entity>
+    <!-- ОЧКИ: якорь 168 (переносица) -->
+    <a-entity mindar-face-target="anchorIndex: 168" id="glassesAnchor">
+      <a-gltf-model
+        id="glassesEntity"
+        src="#glassesModel"
+        position="0 0 -0.1"
+        scale="0.35 0.35 0.35"
+        visible="true">
+      </a-gltf-model>
     </a-entity>
 
-    <!-- 2. НЕОНОВАЯ МАСКА (якорь 1 - кончик носа) -->
-    <a-entity mindar-face-target="anchorIndex: 1" id="maskTarget">
+    <!-- МАСКА: якорь 1 (нос) -->
+    <a-entity mindar-face-target="anchorIndex: 1" id="maskAnchor">
       <a-entity id="maskEntity" visible="false">
-        <a-cone position="0 -0.15 0.15" rotation="180 0 0" radius-bottom="0.45" radius-top="0.1" height="0.6" color="#00cec9" material="wireframe: true; wireframeLinewidth: 2; emissive: #00cec9; emissiveIntensity: 0.9"></a-cone>
-        <a-sphere position="-0.25 -0.2 0.2" radius="0.08" color="#ff7675" material="emissive: #ff7675; emissiveIntensity: 1"></a-sphere>
-        <a-sphere position="0.25 -0.2 0.2" radius="0.08" color="#ff7675" material="emissive: #ff7675; emissiveIntensity: 1"></a-sphere>
+        <a-cone position="0 -0.15 0.15" rotation="180 0 0" radius-bottom="0.45" radius-top="0.1" height="0.6" color="#00cec9" material="wireframe: true; wireframeLinewidth: 2; emissive: #00cec9; emissiveIntensity: 1"></a-cone>
       </a-entity>
     </a-entity>
 
   </a-scene>
 
   <script>
-    const btnGlasses = document.getElementById('btn-glasses');
-    const btnMask = document.getElementById('btn-mask');
-    const btnNone = document.getElementById('btn-none');
+    const selector = document.getElementById('effect-selector');
+    const glassesAnchor = document.getElementById('glassesAnchor');
+    const maskAnchor = document.getElementById('maskAnchor');
 
-    const glassesEntity = document.getElementById('glassesEntity');
-    const maskEntity = document.getElementById('maskEntity');
-
-    function showEffect(name) {
-      btnGlasses.classList.toggle('active', name === 'glasses');
-      btnMask.classList.toggle('active', name === 'mask');
-      btnNone.classList.toggle('active', name === 'none');
-
-      glassesEntity.setAttribute('visible', name === 'glasses');
-      maskEntity.setAttribute('visible', name === 'mask');
-    }
-
-    btnGlasses.addEventListener('click', () => showEffect('glasses'));
-    btnMask.addEventListener('click', () => showEffect('mask'));
-    btnNone.addEventListener('click', () => showEffect('none'));
+    selector.addEventListener('change', (e) => {
+      const val = e.target.value;
+      
+      // Переключаем видимость не у модели, а у самого AR-таргета (это 100% надёжно в MindAR)
+      if (val === 'glasses') {
+        glassesAnchor.object3D.visible = true;
+        maskAnchor.object3D.visible = false;
+      } else if (val === 'mask') {
+        glassesAnchor.object3D.visible = false;
+        maskAnchor.object3D.visible = true;
+      } else {
+        glassesAnchor.object3D.visible = false;
+        maskAnchor.object3D.visible = false;
+      }
+    });
   </script>
 </body>
 </html>
