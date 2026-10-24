@@ -77,7 +77,7 @@
 </head>
 <body>
   <div id="ui-container">
-    <button class="effect-btn active" data-effect="glasses">🕶 Очки</button>
+    <button class="effect-btn active" data-effect="glasses">🕶 Очки 3D</button>
     <button class="effect-btn" data-effect="mask">🎭 Неоновая маска</button>
     <button class="effect-btn" data-effect="none">✖ Без эффекта</button>
   </div>
@@ -93,35 +93,25 @@
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false">
     
+    <a-assets>
+      <!-- Настоящая 3D-модель стильных очков -->
+      <a-asset-item id="glassesModel" src="./glasses.glb"></a-asset-item>
+    </a-assets>
+
     <a-camera position="0 0 0" look-controls-enabled="false"></a-camera>
     
-    <a-light type="ambient" intensity="1.1"></a-light>
-    <a-light type="directional" intensity="1.4" position="0 1 2"></a-light>
+    <a-light type="ambient" intensity="1.2"></a-light>
+    <a-light type="directional" intensity="1.5" position="0 1 2"></a-light>
 
-    <!-- ЭФФЕКТ 1: Очки (якорь 168 - переносица между глаз) -->
+    <!-- ЭФФЕКТ 1: 3D Модель очков (якорь 168 - переносица) -->
     <a-entity mindar-face-target="anchorIndex: 168">
-      <a-entity id="glassesEntity" visible="true" position="0 0 0.22" scale="0.85 0.85 0.85">
-        <!-- Левая линза -->
-        <a-cylinder position="-0.38 0 0" rotation="90 0 0" radius="0.25" height="0.02" color="#1a1a24" material="roughness: 0.1; metalness: 0.9; opacity: 0.92; transparent: true"></a-cylinder>
-        <!-- Левая оправа -->
-        <a-torus position="-0.38 0 0.01" radius="0.25" radius-tubular="0.02" color="#d4af37" material="metalness: 0.9; roughness: 0.2"></a-torus>
-        
-        <!-- Правая линза -->
-        <a-cylinder position="0.38 0 0" rotation="90 0 0" radius="0.25" height="0.02" color="#1a1a24" material="roughness: 0.1; metalness: 0.9; opacity: 0.92; transparent: true"></a-cylinder>
-        <!-- Правая оправа -->
-        <a-torus position="0.38 0 0.01" radius="0.25" radius-tubular="0.02" color="#d4af37" material="metalness: 0.9; roughness: 0.2"></a-torus>
-
-        <!-- Носовая перемычка -->
-        <a-box position="0 0.03 0.01" width="0.26" height="0.035" depth="0.03" color="#d4af37" material="metalness: 0.9; roughness: 0.2"></a-box>
-        
-        <!-- Верхняя планка оправы -->
-        <a-box position="0 0.22 0.01" width="1.05" height="0.04" depth="0.03" color="#d4af37" material="metalness: 0.9; roughness: 0.2"></a-box>
-
-        <!-- Левая дужка -->
-        <a-box position="-0.65 0.12 -0.35" rotation="0 15 0" width="0.03" height="0.03" depth="0.75" color="#d4af37" material="metalness: 0.9; roughness: 0.2"></a-box>
-        <!-- Правая дужка -->
-        <a-box position="0.65 0.12 -0.35" rotation="0 -15 0" width="0.03" height="0.03" depth="0.75" color="#d4af37" material="metalness: 0.9; roughness: 0.2"></a-box>
-      </a-entity>
+      <a-gltf-model
+        id="glassesEntity"
+        src="#glassesModel"
+        position="0 0 -0.1"
+        scale="0.38 0.38 0.38"
+        visible="true">
+      </a-gltf-model>
     </a-entity>
 
     <!-- ЭФФЕКТ 2: Неоновая маска (якорь 1 - кончик носа) -->
